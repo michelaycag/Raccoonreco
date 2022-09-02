@@ -52,5 +52,9 @@ def retrieve(emb):
     # print(query_string)
     cur.execute(query_string)
     result = cur.fetchall()
-    return result
+    mystring = ''
+    for x in result:
+        for y in x:
+            mystring += ' ' + str(y) 
+    return '\n------------------------\n' + mystring + '\n------------------------\n'
 

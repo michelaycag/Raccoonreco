@@ -64,6 +64,9 @@ def cam_exec():
         b, img = cam.read()
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         face_desc = get_face_embedding(img)
+        for (x,y,w,h) in face_desc:
+            cv2.rectangle(img, (x,y), (x+w, y+h), (0, 255, 0), 2)
+        print(face_desc)
         face_emb = vec2list(face_desc)
         cv2.imshow('img', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
         key = cv2.waitKey(1) & 0XFF
@@ -75,6 +78,38 @@ def cam_exec():
             break
 
 
+
+def cam_execMike():
+    x = 1001
+    name = ''
+    cam = cv2.VideoCapture(0)
+    color_green = (0,255,0)
+    line_width = 3
+    while cam.isOpened():
+        b, img = cam.read()
+        dets = detector(img, 1)
+        for det in dets:
+            cv2.rectangle(img,(det.left(), det.top()),(det.right(), det.bottom()), color_green, line_width)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        face_desc = get_face_embedding(img)
+        face_emb = vec2list(face_desc)
+        cv2.imshow('img', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+        key = cv2.waitKey(1) & 0XFF
+        if len(face_emb) == 128 and key == ord('u'):
+
+            print("comparing")
+            print(retrieve(face_emb))
+        if len(face_emb) == 128 and key == ord('r'):
+            name = input("Please enter a string:\n")
+ 
+            print(f'You entered {name}')
+            update_table(x, name, face_emb)
+            x += 1
+            print("UPDATED Successfully")
+        if key == ord('q'):
+            break
+
+
 if __name__ == "__main__":
-    folder_exec()
-    # cam_exec()
+    #folder_exec()
+    cam_execMike()

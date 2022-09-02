@@ -13,4 +13,7 @@ name = "Harbhajan_Singh"
 img = dlib.load_rgb_image("./tmp/boneta.jpg")
 face_desc = get_face_embedding(img)
 face_emb = vec2list(face_desc)
+
+
+#retrieve busca la string de cosos en la base de datos
 print(retrieve(face_emb))
