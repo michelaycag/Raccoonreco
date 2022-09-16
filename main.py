@@ -10,10 +10,10 @@ from FaceRecognitionFunctions import *
 
 name = "Harbhajan_Singh"
 # img = dlib.load_rgb_image(work_dir + name + '/' + name + '_0001.jpg')
-img = dlib.load_rgb_image("./tmp/boneta.jpg")
+img = dlib.load_rgb_image("./LFW/14_Aaron_Johnson_0001.jpg")
 face_desc = get_face_embedding(img)
 face_emb = vec2list(face_desc)
 
 
-#retrieve busca la string de cosos en la base de datos
+# retrieve busca la string de cosos en la base de datos
 print(retrieve(face_emb))

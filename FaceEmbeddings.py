@@ -19,7 +19,6 @@ import os
 from FaceRecognitionFunctions import *
 
 
-
 work_dir = './LFW/'
 
 
@@ -28,8 +27,9 @@ def update_table(id, name, face_emb):
     name = str(name)
     try:
         print(f"id:{id}, name: {name}, face embedding: {face_emb}")
-        cur.execute("INSERT INTO face_table (id,name,face_embedding) VALUES (%s,%s,%s)", (id, name, face_emb))
-    except psycopg2.DatabaseError as e :
+        cur.execute(
+            "INSERT INTO face_table (id,name,face_embedding) VALUES (%s,%s,%s)", (id, name, face_emb))
+    except psycopg2.DatabaseError as e:
         print('Error! face_table', e)
     con.commit()
 
@@ -38,8 +38,8 @@ def folder_exec():
     x = 0
     for name in os.listdir(work_dir):
         print(name)
-        print("workdir" ,work_dir + '/' +  name)
-        img = dlib.load_rgb_image(work_dir + '/' +  name)
+        print("workdir", work_dir + '/' + name)
+        img = dlib.load_rgb_image(work_dir + '/' + name)
         face_desc = get_face_embedding(img)
         face_emb = vec2list(face_desc)
         if len(face_emb) == 128:
@@ -64,8 +64,8 @@ def cam_exec():
         b, img = cam.read()
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         face_desc = get_face_embedding(img)
-        for (x,y,w,h) in face_desc:
-            cv2.rectangle(img, (x,y), (x+w, y+h), (0, 255, 0), 2)
+        for (x, y, w, h) in face_desc:
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
         print(face_desc)
         face_emb = vec2list(face_desc)
         cv2.imshow('img', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
@@ -78,18 +78,18 @@ def cam_exec():
             break
 
 
-
 def cam_execMike():
     x = 1001
     name = ''
     cam = cv2.VideoCapture(0)
-    color_green = (0,255,0)
+    color_green = (0, 255, 0)
     line_width = 3
     while cam.isOpened():
         b, img = cam.read()
         dets = detector(img, 1)
         for det in dets:
-            cv2.rectangle(img,(det.left(), det.top()),(det.right(), det.bottom()), color_green, line_width)
+            cv2.rectangle(img, (det.left(), det.top()),
+                          (det.right(), det.bottom()), color_green, line_width)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         face_desc = get_face_embedding(img)
         face_emb = vec2list(face_desc)
@@ -101,7 +101,7 @@ def cam_execMike():
             print(retrieve(face_emb))
         if len(face_emb) == 128 and key == ord('r'):
             name = input("Please enter a string:\n")
- 
+
             print(f'You entered {name}')
             update_table(x, name, face_emb)
             x += 1
@@ -111,5 +111,5 @@ def cam_execMike():
 
 
 if __name__ == "__main__":
-    #folder_exec()
-    cam_execMike()
+    folder_exec()
+    # cam_execMike()
