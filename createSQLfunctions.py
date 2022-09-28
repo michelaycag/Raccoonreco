@@ -2,7 +2,7 @@ import psycopg2
 
 try:
     con = psycopg2.connect(
-        host = "127.0.0.1",
+        host="postgres",
         port=5432,
         database='postgres',
         user='postgres',
@@ -43,7 +43,7 @@ select sqrt (SUM (tab.v)) as euclidian from (SELECT
 ''')
 
 cur.execute('''
-CREATE TABLE public.face_table
+CREATE TABLE IF NOT EXISTS public.face_table
 (
     id bigint NOT NULL,
     name character varying(100) NOT NULL,
@@ -51,6 +51,6 @@ CREATE TABLE public.face_table
     PRIMARY KEY (id)
 );
 '''
-)
+            )
 
 con.commit()
