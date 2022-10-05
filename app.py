@@ -43,7 +43,7 @@ def insertUser():
     imgRecovered = cv2.cvtColor(imgRecovered, cv2.COLOR_RGB2BGR)
     face_desc = get_face_embedding(imgRecovered)
     face_emb = vec2list(face_desc)
-    update_table(1004, name, face_emb)
+    update_table(name, face_emb)
     response = app.response_class(
         response='Inserted successfully.',
         status=201,
