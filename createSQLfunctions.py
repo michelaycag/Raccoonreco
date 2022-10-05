@@ -45,7 +45,7 @@ select sqrt (SUM (tab.v)) as euclidian from (SELECT
 cur.execute('''
 CREATE TABLE IF NOT EXISTS public.face_table
 (
-    id bigint NOT NULL,
+    id serial NOT NULL,
     name character varying(100) NOT NULL,
     face_embedding double precision[] NOT NULL,
     PRIMARY KEY (id)
