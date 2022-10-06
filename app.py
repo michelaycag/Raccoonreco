@@ -8,11 +8,12 @@ import json
 from codecs import encode
 from imageio import imread
 import io
-
+from createSQLfunctions import initDB
 
 app = Flask(__name__)
 CORS(app)
 
+initDB()
 
 @app.route('/recognize', methods=['POST'])
 def compareImage():
