@@ -1,7 +1,7 @@
 import cv2
 from FaceEmbeddings import update_table
 from FaceRecognitionFunctions import *
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import base64
 import json
@@ -9,16 +9,9 @@ from codecs import encode
 from imageio import imread
 import io
 from createSQLfunctions import initDB
-from routes import *
+from . import routes
 
 
-initDB()
-app = Flask(__name__)
-app.register_blueprint(routes)
-
-CORS(app)
-
-
-@app.route('/')
-def hello_world():
-    return 'Hello, I am Flask in Docker!'
+@routes.route("/register", methods=['POST', 'GET'])
+def register():
+    return 'Hello, I am in register'
