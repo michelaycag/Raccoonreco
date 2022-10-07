@@ -25,3 +25,36 @@ def register():
     con.commit()
     return jsonify({"msg": "All fields are required!"}), 400
 
+
+@routes.route("/users", methods=['GET'])
+def getAll():
+    try:
+        cur.execute("SELECT * FROM partners")
+        users = cur.fetchall()
+        con.commit()
+        return jsonify({"data": users}), 200
+    except psycopg2.DatabaseError as e :
+        con.commit()
+        return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
+
+
+@routes.route("/user", methods=['PATCH'])
+def updateUser():
+    name = request.json.get("name", None)
+    partnerId = int(request.json.get("partnerId", None))
+    document = request.json.get("document", None)
+    contactNumber = request.json.get("contactNumber", None)
+
+
+    if all(item is not None for item in [name, partnerId, document,contactNumber]):
+        try:
+            cur.execute("UPDATE partners SET name= %s, document= %s, contactNumber= %s WHERE partnerId= %s", (name, document, contactNumber, partnerId))
+            cur.execute("SELECT * from partners p WHERE p.partnerId = %s", [partnerId])
+            user = cur.fetchone()
+            con.commit()
+            return jsonify({"msg": "User updated successfully", "user": user}), 200
+        except psycopg2.DatabaseError as e :
+            con.commit()
+            return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
+    con.commit()
+    return jsonify({"msg": "All fields are required!"}), 400
