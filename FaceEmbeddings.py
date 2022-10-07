@@ -23,13 +23,12 @@ from FaceRecognitionFunctions import *
 work_dir = './LFW/'
 
 
-def update_table( name, face_emb):
-
+def update_table( name, face_emb, partnerId):
     name = str(name)
     try:
-        print(f"name: {name}, face embedding: {face_emb}")
-        cur.execute("INSERT INTO face_table (name,face_embedding) VALUES (%s,%s)", (name, face_emb))
-    except psycopg2.DatabaseError as e :
+        cur.execute("INSERT INTO face_table (name,face_embedding, partner_id) VALUES (%s,%s,%s)", (name, face_emb, partnerId))
+    except psycopg2 as e :
+        cur.close()
         print('Error! face_table', e)
     con.commit()
 

@@ -3,3 +3,4 @@ routes = Blueprint('routes', __name__)
 
 from .recognize import *
 from .user import *
+from .auth import *

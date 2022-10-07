@@ -10,11 +10,17 @@ from imageio import imread
 import io
 from createSQLfunctions import initDB
 from routes import *
-
+from flask_jwt_extended import JWTManager
 
 initDB()
+
 app = Flask(__name__)
+
 app.register_blueprint(routes)
+
+app.config["JWT_SECRET_KEY"] = "secretKey"
+jwt = JWTManager(app)
+
 
 CORS(app)
 

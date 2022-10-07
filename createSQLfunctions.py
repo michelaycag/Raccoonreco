@@ -44,11 +44,25 @@ def initDB():
     ''')
 
     cur.execute('''
+    CREATE TABLE IF NOT EXISTS public.partners
+    (
+        id serial NOT NULL,
+        name character varying(100) NOT NULL,
+        partnerId integer NOT NULL,
+        document character varying(100) NOT NULL,
+        contactNumber character varying(100) NOT NULL,
+        PRIMARY KEY (partnerId)
+    );
+    '''
+                )
+
+    cur.execute('''
     CREATE TABLE IF NOT EXISTS public.face_table
     (
         id serial NOT NULL,
         name character varying(100) NOT NULL,
         face_embedding double precision[] NOT NULL,
+        partner_id integer REFERENCES partners (partnerId),
         PRIMARY KEY (id)
     );
     '''
