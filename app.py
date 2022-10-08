@@ -11,10 +11,12 @@ import io
 from createSQLfunctions import initDB
 from routes import *
 from flask_jwt_extended import JWTManager
+from flask_bcrypt import Bcrypt
 
 initDB()
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 
 app.register_blueprint(routes,url_prefix="/api/v1")
 

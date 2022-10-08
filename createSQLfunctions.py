@@ -57,13 +57,25 @@ def initDB():
                 )
 
     cur.execute('''
+    CREATE TABLE IF NOT EXISTS public.users
+    (
+        id serial NOT NULL,
+        name character varying(100) NOT NULL,
+        email character varying(100) NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        rol character varying(100) NOT NULL,
+        PRIMARY KEY (id)
+    );
+    '''
+                )
+
+    cur.execute('''
     CREATE TABLE IF NOT EXISTS public.face_table
     (
         id serial NOT NULL,
         name character varying(100) NOT NULL,
         face_embedding double precision[] NOT NULL,
         partnerId integer NOT NULL,
-
         CONSTRAINT fk_partner_id FOREIGN KEY(partnerId) REFERENCES partners (id) ON DELETE CASCADE,
         PRIMARY KEY (id)
     );

@@ -23,7 +23,7 @@ def compareImage():
 
 
 @routes.route('/face', methods=['POST'])
-def insertUser():
+def insertFace():
     data = request.get_json()
     encodedImage = data['imageEncoded']
     partnerId= int(data['partnerId'])
