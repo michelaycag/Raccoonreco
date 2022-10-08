@@ -48,10 +48,10 @@ def initDB():
     (
         id serial NOT NULL,
         name character varying(100) NOT NULL,
-        partnerId integer NOT NULL,
+        partnerId integer NOT NULL UNIQUE,
         document character varying(100) NOT NULL,
         contactNumber character varying(100) NOT NULL,
-        PRIMARY KEY (partnerId)
+        PRIMARY KEY (id)
     );
     '''
                 )
@@ -62,7 +62,9 @@ def initDB():
         id serial NOT NULL,
         name character varying(100) NOT NULL,
         face_embedding double precision[] NOT NULL,
-        partner_id integer REFERENCES partners (partnerId),
+        partnerId integer NOT NULL,
+
+        CONSTRAINT fk_partner_id FOREIGN KEY(partnerId) REFERENCES partners (id) ON DELETE CASCADE,
         PRIMARY KEY (id)
     );
     '''

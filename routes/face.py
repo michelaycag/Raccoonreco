@@ -8,7 +8,7 @@ from imageio import imread
 import io
 from . import routes
 
-@routes.route('/recognize', methods=['POST'])
+@routes.route('/face', methods=['PUT'])
 def compareImage():
     data = request.get_json()
     encodedImage = data['imageEncoded']
@@ -22,7 +22,7 @@ def compareImage():
     return response
 
 
-@routes.route('/user', methods=['POST'])
+@routes.route('/face', methods=['POST'])
 def insertUser():
     data = request.get_json()
     encodedImage = data['imageEncoded']

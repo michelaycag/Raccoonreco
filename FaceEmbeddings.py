@@ -26,15 +26,18 @@ work_dir = './LFW/'
 def update_table( name, face_emb, partnerId):
     name = str(name)
     try:
-        cur.execute("INSERT INTO face_table (name,face_embedding, partner_id) VALUES (%s,%s,%s)", (name, face_emb, partnerId))
-    except psycopg2 as e :
+        cur = con.cursor()
+        cur.execute("INSERT INTO face_table (name,face_embedding, partnerId) VALUES (%s,%s,%s)", (name, face_emb, partnerId))
+        con.commit()
         cur.close()
+    except psycopg2 as e :
         print('Error! face_table', e)
-    con.commit()
+    
 
 
 def folder_exec():
     x = 0
+    cur = con.cursor()
     for name in os.listdir(work_dir):
         print(name)
         print("workdir" ,work_dir + '/' +  name)
