@@ -21,6 +21,7 @@ bcrypt = Bcrypt(app)
 app.register_blueprint(routes,url_prefix="/api/v1")
 
 app.config["JWT_SECRET_KEY"] = "secretKey"
+app.config["JWT_TOKEN_LOCATION"] = ["headers", "query_string","cookies","json"]
 jwt = JWTManager(app)
 
 

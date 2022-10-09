@@ -10,9 +10,10 @@ from . import routes
 from flask_jwt_extended import jwt_required
 
 @routes.route('/face', methods=['PUT'])
+@jwt_required()
 def compareImage():
     encodedImage = request.json.get('imageEncoded', None)
-  
+    
     if encodedImage is None:
         return jsonify({"msg": "All fields are required!"}), 400
 
