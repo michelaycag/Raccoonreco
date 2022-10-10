@@ -82,7 +82,7 @@ def updatePartner():
 @routes.route("/partner", methods=['DELETE'])
 @jwt_required()
 def deletePartner():
-    partnerId = request.json.get("partnerId", None)
+    partnerId = int(request.json.get("partnerId", None))
 
     if partnerId is None:
         return jsonify({"msg": "All fields are required!"}), 400

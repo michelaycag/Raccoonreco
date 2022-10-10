@@ -69,7 +69,7 @@ def login():
 def getAllUsers():
     try:
         cur = con.cursor()    
-        cur.execute("SELECT * FROM users")
+        cur.execute("SELECT id, name, email, rol FROM users")
         users = cur.fetchall()
         con.commit()
         cur.close()
@@ -82,22 +82,22 @@ def getAllUsers():
 @jwt_required()
 def updateUser():
     name = request.json.get("name", None)
-    email = int(request.json.get("partnerId", None))
-    password = request.json.get("password", None)
+    id = int(request.json.get("id", None))
     rol = request.json.get("rol", None)
+    email = request.json.get("email", None)
 
     if name is None:
         return jsonify({"msg": "All fields are required!"}), 400
     if email is None:
         return jsonify({"msg": "All fields are required!"}), 400
-    if password is None:
-        return jsonify({"msg": "All fields are required!"}), 400
     if rol is None:
+        return jsonify({"msg": "All fields are required!"}), 400
+    if id is None:
         return jsonify({"msg": "All fields are required!"}), 400
 
     try:
         cur = con.cursor()
-        cur.execute("UPDATE users SET name= %s, email= %s, password= %s WHERE rol= %s", (name, email, password, rol))
+        cur.execute("UPDATE users SET name= %s, email= %s, rol= %s WHERE id = %s", (name, email, rol, id))
         cur.execute("SELECT * from users u WHERE u.email = %s", [email])
         user = cur.fetchone()
         con.commit()
@@ -111,16 +111,16 @@ def updateUser():
 @routes.route("/user", methods=['DELETE'])
 @jwt_required()
 def deleteUser():
-    email = request.json.get("email", None)
+    id = int(request.json.get("id", None))
 
-    if email is None:
+    if id is None:
         return jsonify({"msg": "All fields are required!"}), 400
 
     try:
         cur = con.cursor()
-        cur.execute("DELETE FROM users u WHERE u.emai=%s", [email] )
+        cur.execute("DELETE FROM users u WHERE u.id=%s", [id] )
         rowsDeleted = cur.rowcount
-        cur.execute("SELECT * from partners p WHERE p.partnerId = %s", [email])
+        cur.execute("SELECT * from users u WHERE u.id = %s", [id])
         con.commit()
         cur.close()
         if (rowsDeleted != 1):
