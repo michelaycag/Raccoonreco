@@ -9,48 +9,23 @@ from codecs import encode
 from imageio import imread
 import io
 from createSQLfunctions import initDB
-
-app = Flask(__name__)
-CORS(app)
+from routes import *
+from flask_jwt_extended import JWTManager
+from flask_bcrypt import Bcrypt
 
 initDB()
 
-@app.route('/recognize', methods=['POST'])
-def compareImage():
-    data = request.get_json()
-    encodedImage = data['imageEncoded']
-    encoded_data = encodedImage.split(',')[1]
-    imgRecovered = imread(io.BytesIO(base64.b64decode(encoded_data)))
-    imgRecovered = cv2.cvtColor(imgRecovered, cv2.COLOR_RGB2BGR)
-    face_desc = get_face_embedding(imgRecovered)
-    face_emb = vec2list(face_desc)
-    retrieveResponse = retrieve(face_emb)
-    print(retrieveResponse)
-    response = app.response_class(
-        response=json.dumps(retrieveResponse),
-        status=200,
-        mimetype='application/json'
-    )
-    return response
+app = Flask(__name__)
+bcrypt = Bcrypt(app)
+
+app.register_blueprint(routes,url_prefix="/api/v1")
+
+app.config["JWT_SECRET_KEY"] = "secretKey"
+app.config["JWT_TOKEN_LOCATION"] = ["headers", "query_string","cookies","json"]
+jwt = JWTManager(app)
 
 
-@app.route('/user', methods=['POST'])
-def insertUser():
-    data = request.get_json()
-    encodedImage = data['imageEncoded']
-    name = data["name"]
-    encoded_data = encodedImage.split(',')[1]
-    imgRecovered = imread(io.BytesIO(base64.b64decode(encoded_data)))
-    imgRecovered = cv2.cvtColor(imgRecovered, cv2.COLOR_RGB2BGR)
-    face_desc = get_face_embedding(imgRecovered)
-    face_emb = vec2list(face_desc)
-    update_table(name, face_emb)
-    response = app.response_class(
-        response='Inserted successfully.',
-        status=201,
-        mimetype='application/json'
-    )
-    return response
+CORS(app)
 
 
 @app.route('/')
