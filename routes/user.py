@@ -24,17 +24,19 @@ def insertUser():
         return jsonify({"msg": "All fields are required!"}), 400
 
     try:
-        hashedPassword = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        hashedPassword = bcrypt.hashpw(
+            password.encode('utf-8'), bcrypt.gensalt())
         cur = con.cursor()
-        cur.execute("INSERT INTO users (name, email, password, rol) VALUES (%s,%s,%s,%s)", (name, email, hashedPassword.decode('utf-8'), rol))
+        cur.execute("INSERT INTO users (name, email, password, rol) VALUES (%s,%s,%s,%s)",
+                    (name, email, hashedPassword.decode('utf-8'), rol))
         cur.execute("SELECT * from users u WHERE u.email = %s", [email])
         user = cur.fetchone()
         con.commit()
         cur.close()
         return jsonify({"msg": "User inserted successfully", "user": user}), 201
-    except psycopg2.DatabaseError as e :
+    except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
-    
+
 
 @routes.route("/login", methods=['POST'])
 def login():
@@ -52,29 +54,28 @@ def login():
         user = cur.fetchone()
         cur.close()
         if not user:
-            return {"msg":'Email or password are wrong!'}, 401
+            return {"msg": 'Email or password are wrong!'}, 401
         if bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
-            access_token = create_access_token(identity={"email": user[2]})
+            access_token = create_access_token(
+                identity={"email": user[2], "rol": user[4]})
             return {"msg": "Logged successfully", "access_token": access_token}, 200
-        return {"msg":'Email or password are wrong!'}, 401
+        return {"msg": 'Email or password are wrong!'}, 401
 
-    except psycopg2.DatabaseError as e :
+    except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
-
-
 
 
 @routes.route("/users", methods=['GET'])
 @jwt_required()
 def getAllUsers():
     try:
-        cur = con.cursor()    
+        cur = con.cursor()
         cur.execute("SELECT id, name, email, rol FROM users")
         users = cur.fetchall()
         con.commit()
         cur.close()
         return jsonify({"data": users}), 200
-    except psycopg2.DatabaseError as e :
+    except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 
 
@@ -97,15 +98,15 @@ def updateUser():
 
     try:
         cur = con.cursor()
-        cur.execute("UPDATE users SET name= %s, email= %s, rol= %s WHERE id = %s", (name, email, rol, id))
+        cur.execute(
+            "UPDATE users SET name= %s, email= %s, rol= %s WHERE id = %s", (name, email, rol, id))
         cur.execute("SELECT * from users u WHERE u.email = %s", [email])
         user = cur.fetchone()
         con.commit()
         cur.close()
         return jsonify({"msg": "User updated successfully", "user": user}), 200
-    except psycopg2.DatabaseError as e :
+    except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
-
 
 
 @routes.route("/user", methods=['DELETE'])
@@ -118,7 +119,7 @@ def deleteUser():
 
     try:
         cur = con.cursor()
-        cur.execute("DELETE FROM users u WHERE u.id=%s", [id] )
+        cur.execute("DELETE FROM users u WHERE u.id=%s", [id])
         rowsDeleted = cur.rowcount
         cur.execute("SELECT * from users u WHERE u.id = %s", [id])
         con.commit()
@@ -127,5 +128,5 @@ def deleteUser():
             return jsonify({"msg": str(rowsDeleted) + " rows deleted"}), 200
         else:
             return jsonify({"msg": str(rowsDeleted) + " row deleted"}), 200
-    except psycopg2.DatabaseError as e :
+    except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
