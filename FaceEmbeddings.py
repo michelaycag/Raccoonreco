@@ -23,21 +23,19 @@ from FaceRecognitionFunctions import *
 work_dir = './LFW/'
 
 
-def update_table( name, face_emb, partnerId):
+def update_table( name, face_emb):
+
     name = str(name)
     try:
-        cur = con.cursor()
-        cur.execute("INSERT INTO face_table (name,face_embedding, partnerId) VALUES (%s,%s,%s)", (name, face_emb, partnerId))
-        con.commit()
-        cur.close()
-    except psycopg2 as e :
+        print(f"name: {name}, face embedding: {face_emb}")
+        cur.execute("INSERT INTO face_table (name,face_embedding) VALUES (%s,%s)", (name, face_emb))
+    except psycopg2.DatabaseError as e :
         print('Error! face_table', e)
-    
+    con.commit()
 
 
 def folder_exec():
     x = 0
-    cur = con.cursor()
     for name in os.listdir(work_dir):
         print(name)
         print("workdir" ,work_dir + '/' +  name)
