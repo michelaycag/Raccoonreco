@@ -10,7 +10,7 @@ con = psycopg2.connect(
     user='postgres',
     password='OpenCV'
 )
-
+cur = con.cursor()
 
 
 face_rec_model_path = './Data/dlib_face_recognition_resnet_model_v1.dat'
@@ -45,7 +45,6 @@ def get_face_embedding(img):
 
 
 def retrieve(emb):
-    cur = con.cursor()
     query_string = """
     select face_table.id as tabid, face_table.name as tabname,
         euclidian ('{0}', face_table.face_embedding) as eucl from face_table
@@ -55,6 +54,5 @@ def retrieve(emb):
     # print(query_string)
     cur.execute(query_string)
     result = cur.fetchall()
-    cur.close()
     for x in result:
         return x
