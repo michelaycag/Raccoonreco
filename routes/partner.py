@@ -12,6 +12,7 @@ def insertPartner():
     partnerId = int(request.json.get("partnerId", None))
     document = request.json.get("document", None)
     contactNumber = request.json.get("contactNumber", None)
+    authorized = True
 
     if name is None:
         return jsonify({"msg": "All fields are required!"}), 400
@@ -24,7 +25,7 @@ def insertPartner():
 
     try:
         cur = con.cursor()
-        cur.execute("INSERT INTO partners (name, partnerId, document, contactNumber) VALUES (%s,%s,%s,%s)", (name, partnerId, document, contactNumber))
+        cur.execute("INSERT INTO partners (name, partnerId, document,authorized , contactNumber) VALUES (%s,%s,%s,%s,%s)", (name, partnerId, document,authorized, contactNumber))
         cur.execute("SELECT * from partners p WHERE p.partnerId = %s", [partnerId])
         user = cur.fetchone()
         con.commit()

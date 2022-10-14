@@ -48,6 +48,8 @@ def insertFace():
     imgRecovered = cv2.cvtColor(imgRecovered, cv2.COLOR_RGB2BGR)
     face_desc = get_face_embedding(imgRecovered)
     face_emb = vec2list(face_desc)
+    if len(face_emb) == 0:
+        return jsonify({"msg": "No face detected"}), 400 
     update_table(name, face_emb, partnerId)
     response = Response(stream_with_context(json.dumps('Inserted successfully.')),mimetype='application/json')
     return response

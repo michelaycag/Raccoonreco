@@ -50,6 +50,7 @@ def initDB():
         name character varying(100) NOT NULL,
         partnerId integer NOT NULL UNIQUE,
         document character varying(100) NOT NULL,
+        authorized boolean NOT NULL,
         contactNumber character varying(100) NOT NULL,
         PRIMARY KEY (id)
     );
