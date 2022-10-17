@@ -9,14 +9,14 @@ import io
 from . import routes
 from flask_jwt_extended import jwt_required
 
+
 @routes.route('/face', methods=['PUT'])
-@jwt_required()
+@jwt_required(fresh=False)
 def compareImage():
     encodedImage = request.json.get('imageEncoded', None)
-    
+
     if encodedImage is None:
         return jsonify({"msg": "All fields are required!"}), 400
-
 
     encoded_data = encodedImage.split(',')[1]
 
@@ -25,15 +25,16 @@ def compareImage():
     face_desc = get_face_embedding(imgRecovered)
     face_emb = vec2list(face_desc)
     retrieveResponse = retrieve(face_emb)
-    response = Response(stream_with_context(json.dumps(retrieveResponse)), mimetype='application/json')
+    response = Response(stream_with_context(json.dumps(
+        retrieveResponse)), mimetype='application/json')
     return response
 
 
 @routes.route('/face', methods=['POST'])
-@jwt_required()
+@jwt_required(fresh=True)
 def insertFace():
     encodedImage = request.json.get('imageEncoded', None)
-    partnerId= int(request.json.get('partnerId', None))
+    partnerId = int(request.json.get('partnerId', None))
     name = request.json.get('name', None)
 
     if encodedImage is None:
@@ -49,9 +50,8 @@ def insertFace():
     face_desc = get_face_embedding(imgRecovered)
     face_emb = vec2list(face_desc)
     if len(face_emb) == 0:
-        return jsonify({"msg": "No face detected"}), 400 
+        return jsonify({"msg": "No face detected"}), 400
     update_table(name, face_emb, partnerId)
-    response = Response(stream_with_context(json.dumps('Inserted successfully.')),mimetype='application/json')
+    response = Response(stream_with_context(json.dumps(
+        'Inserted successfully.')), mimetype='application/json')
     return response
-
-

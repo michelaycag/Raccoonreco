@@ -1,14 +1,23 @@
 from pydoc import doc
+import re
 import bcrypt
 from flask import jsonify, request
 from FaceRecognitionFunctions import *
 from . import routes
-from flask_jwt_extended import JWTManager, get_jwt, jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import (JWTManager, get_jwt, jwt_required,
+                                create_access_token, get_jwt_identity,
+                                create_refresh_token, decode_token)
+from utils.utils import blocklist
 
 
 @routes.route("/user", methods=['POST'])
-@jwt_required()
+@jwt_required(fresh=True)
 def insertUser():
+    current_user = get_jwt_identity()
+    rolActual = current_user["rol"]
+    if rolActual != "Admin":
+        return {"msg": 'Only admins can do that!'}, 401
+
     name = request.json.get("name", None)
     email = request.json.get("email", None)
     password = request.json.get("password", None)
@@ -56,9 +65,15 @@ def login():
         if not user:
             return {"msg": 'Email or password are wrong!'}, 401
         if bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
+            identidad = {"email": user[2], "rol": user[4]}
             access_token = create_access_token(
-                identity={"email": user[2], "rol": user[4]})
-            return {"msg": "Logged successfully", "access_token": access_token}, 200
+                identity=identidad, fresh=True)
+            refresh_token = create_refresh_token(identidad)
+            return {
+                "msg": "Logged successfully",
+                "access_token": access_token,
+                "refresh_token": refresh_token
+            }, 200
         return {"msg": 'Email or password are wrong!'}, 401
 
     except psycopg2.DatabaseError as e:
@@ -66,7 +81,7 @@ def login():
 
 
 @routes.route("/users", methods=['GET'])
-@jwt_required()
+@jwt_required(fresh=False)
 def getAllUsers():
     try:
         cur = con.cursor()
@@ -80,8 +95,13 @@ def getAllUsers():
 
 
 @routes.route("/user", methods=['PATCH'])
-@jwt_required()
+@jwt_required(fresh=True)
 def updateUser():
+    current_user = get_jwt_identity()
+    rolActual = current_user["rol"]
+    if rolActual != "Admin":
+        return {"msg": 'Only admins can do that!'}, 401
+
     name = request.json.get("name", None)
     id = int(request.json.get("id", None))
     rol = request.json.get("rol", None)
@@ -110,8 +130,13 @@ def updateUser():
 
 
 @routes.route("/user", methods=['DELETE'])
-@jwt_required()
+@jwt_required(fresh=True)
 def deleteUser():
+    current_user = get_jwt_identity()
+    rolActual = current_user["rol"]
+    if rolActual != "Admin":
+        return {"msg": 'Only admins can do that!'}, 401
+
     id = int(request.json.get("id", None))
 
     if id is None:
@@ -130,3 +155,52 @@ def deleteUser():
             return jsonify({"msg": str(rowsDeleted) + " row deleted"}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
+
+
+@routes.route("/refresh", methods=['GET'])
+@jwt_required(refresh=True)
+def refreshToken():
+    current_user = get_jwt_identity()
+    new_token = create_access_token(identity=current_user, fresh=False)
+    return {'access_token': new_token}, 200
+
+
+@routes.route("/fullRefresh", methods=['POST'])
+@jwt_required(fresh=False)
+def fullRefreshToken():
+    password = request.json.get("password", None)
+
+    if password is None:
+        return jsonify({"msg": "Password is required!"}), 400
+    current_user = get_jwt_identity()
+    email = current_user["email"]
+    cur = con.cursor()
+    cur.execute("SELECT * from users u WHERE u.email = %s", [email])
+    user = cur.fetchone()
+    cur.close()
+    if not user:
+        return {"msg": 'Please login!'}, 401
+    if bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
+        identidad = {"email": user[2], "rol": user[4]}
+        access_token = create_access_token(identity=identidad, fresh=True)
+        refresh_token = create_refresh_token(identidad)
+        return {
+            "msg": "Refresh token successfully",
+            "access_token": access_token,
+            "refresh_token": refresh_token
+        }, 200
+    return {"msg": 'Password is wrong!'}, 401
+
+
+@routes.route("/logout", methods=["POST"])
+@jwt_required(fresh=False)
+def logout():
+    token = get_jwt()
+    jti = token["jti"]
+    ttype = token["type"]
+    blocklist.add(jti)
+    refreshToken = request.json.get("token", None)
+    if refreshToken is not None:
+        decode_token(refreshToken)
+        blocklist.add(decode_token(refreshToken)["jti"])
+    return jsonify(msg=f"{ttype.capitalize()} token successfully revoked")
