@@ -204,3 +204,19 @@ def logout():
         decode_token(refreshToken)
         blocklist.add(decode_token(refreshToken)["jti"])
     return jsonify(msg=f"{ttype.capitalize()} token successfully revoked")
+
+
+@routes.route("/user/<email>", methods=['GET'])
+@jwt_required(fresh=False)
+def getUserByEmail(email):
+    if email is None:
+        return jsonify({"msg": "email is required!"}), 400
+    try:
+        cur = con.cursor()
+        cur.execute(
+            "SELECT id, name, email, rol from users u WHERE u.email = %s", [email])
+        user = cur.fetchone()
+        cur.close()
+        return jsonify({"data": user}), 200
+    except psycopg2.DatabaseError as e:
+        return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
