@@ -194,7 +194,7 @@ def fullRefreshToken():
 
 
 @routes.route("/logout", methods=["POST"])
-@jwt_required(fresh=False)
+@jwt_required(refresh=True)
 def logout():
     token = get_jwt()
     jti = token["jti"]
