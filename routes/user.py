@@ -90,7 +90,16 @@ def getAllUsers():
         users = cur.fetchall()
         con.commit()
         cur.close()
-        return jsonify({"data": users}), 200
+        usuarios = []
+        if users is not None:
+            for u in users:
+                data = {}
+                data["id"] = u[0]
+                data["name"] = u[1]
+                data["email"] = u[2]
+                data["rol"] = u[3]
+                usuarios.append(data)
+        return jsonify({"data": usuarios}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 

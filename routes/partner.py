@@ -46,14 +46,25 @@ def getAllPartners():
         users = cur.fetchall()
         con.commit()
         cur.close()
-        return jsonify({"data": users}), 200
+        usuarios = []
+        if users is not None:
+            for u in users:
+                data = {}
+                data["id"] = u[0]
+                data["name"] = u[1]
+                data["partnerId"] = u[2]
+                data["document"] = u[3]
+                data["authorized"] = u[4]
+                data["contactNumber"] = u[5]
+                usuarios.append(data)
+        return jsonify({"data": usuarios}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 
 
 @routes.route("/partner", methods=['PATCH'])
-@jwt_required()
-def updatePartner(fresh=True):
+@jwt_required(fresh=True)
+def updatePartner():
     name = request.json.get("name", None)
     partnerId = int(request.json.get("partnerId", None))
     document = request.json.get("document", None)
