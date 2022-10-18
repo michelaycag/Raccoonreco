@@ -8,6 +8,7 @@ from flask_jwt_extended import (JWTManager, get_jwt, jwt_required,
                                 create_access_token, get_jwt_identity,
                                 create_refresh_token, decode_token)
 from utils.utils import blocklist
+from datetime import datetime
 
 
 @routes.route("/user", methods=['POST'])
@@ -217,6 +218,32 @@ def getUserByEmail(email):
             "SELECT id, name, email, rol from users u WHERE u.email = %s", [email])
         user = cur.fetchone()
         cur.close()
-        return jsonify({"data": user}), 200
+        if (user is not None and len(user) > 0):
+            return jsonify({"id": user[0], "name": user[1], "email": user[2], "rol": user[3]}), 200
+        return jsonify({"id": user}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
+
+
+@routes.route("/user", methods=['GET'])
+@jwt_required(fresh=False)
+def getUser():
+    current_user = get_jwt_identity()
+    email = current_user["email"]
+    try:
+        cur = con.cursor()
+        cur.execute(
+            "SELECT id, name, email, rol from users u WHERE u.email = %s", [email])
+        user = cur.fetchone()
+        cur.close()
+        if (user is not None and len(user) > 0):
+            return jsonify({"id": user[0], "name": user[1], "email": user[2], "rol": user[3]}), 200
+        return jsonify({"id": user}), 200
+    except psycopg2.DatabaseError as e:
+        return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
+
+
+@routes.route("/status", methods=['GET'])
+@jwt_required(refresh=True)
+def status():
+    return jsonify({"alive": True}), 200
