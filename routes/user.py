@@ -167,7 +167,7 @@ def deleteUser():
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 
 
-@routes.route("/refresh", methods=['GET'])
+@routes.route("/refresh", methods=['PUT'])
 @jwt_required(refresh=True)
 def refreshToken():
     current_user = get_jwt_identity()
