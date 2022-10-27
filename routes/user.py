@@ -147,10 +147,13 @@ def deleteUser():
     if rolActual != "Admin":
         return {"msg": 'Only admins can do that!'}, 401
 
-    id = int(request.json.get("id", None))
+    id = request.json.get("id", None)
+    
 
     if id is None:
         return jsonify({"msg": "All fields are required!"}), 400
+    else:
+        id = int(id)
 
     try:
         cur = con.cursor()

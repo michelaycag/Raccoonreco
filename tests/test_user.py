@@ -4,26 +4,7 @@ from routes import *
 from urllib import response
 import pytest
 from app import app
-
-
-
-def get_token():
-    data = {
-        'email' : 'mike@mike.com',
-        'password':'facu1234'
-    }
-    response = app.test_client().post('/api/v1/login', json=data)
-    
-    return response.json['access_token']
-
-def get_token_refresh():
-    data = {
-        'email' : 'mike@mike.com',
-        'password':'facu1234'
-    }
-    response = app.test_client().post('/api/v1/login', json=data)
-    
-    return response.json['refresh_token']
+from tokens import *
 
 def test_init():
     response = app.test_client().get('/')
@@ -59,6 +40,92 @@ def test_get_all_users_authorized():
 
     assert response.status_code == 200
 
+def test_insert_user_without_all_fields():
+    token = get_token()
+    headers = {
+        'Authorization': 'Bearer {}'.format(token)
+    }
+    data = {
+        'name' : 'maik',
+        'email' : 'maik@mike.com',
+        'password':'facu1234',
+    }
+
+    response = app.test_client().post('/api/v1/user',json=data, headers=headers)
+    assert response.json['msg'] == "All fields are required!"
+    assert response.status_code == 400
+
+def test_insert_user():
+    token = get_token()
+    headers = {
+        'Authorization': 'Bearer {}'.format(token)
+    }
+    data = {
+        'name' : 'maik',
+        'email' : 'maik@mike.com',
+        'password':'facu1234',
+        'rol' : 'Admin',
+    }
+
+    response = app.test_client().post('/api/v1/user',json=data, headers=headers)
+    assert response.json['msg'] == "User inserted successfully"
+    assert response.status_code == 201
+
+def test_edit_user():
+    token = get_token()
+    headers = {
+        'Authorization': 'Bearer {}'.format(token)
+    }
+
+    response = app.test_client().get('/api/v1/user/maik@mike.com', headers=headers)
+    id =  response.json['id']
+    data = {
+        "id": id
+    }
+
+
+    data = {
+        'name' : 'michael',
+        'id': id,
+        'email' : 'maik@mike.com',
+        'rol' : 'Admin',
+    }
+
+    response = app.test_client().patch('/api/v1/user',json=data, headers=headers)
+    assert response.json['msg'] == "User updated successfully"
+    assert response.status_code == 200
+
+def test_delete_user_id_none():
+    token = get_token()
+    headers = {
+        'Authorization': 'Bearer {}'.format(token)
+    }
+    data = {
+        
+    }
+
+    response = app.test_client().delete('/api/v1/user',json=data, headers=headers)
+    assert response.json['msg'] == "All fields are required!"
+    assert response.status_code == 400
+
+def test_delete_user():
+    token = get_token()
+    headers = {
+        'Authorization': 'Bearer {}'.format(token)
+    }
+
+    response = app.test_client().get('/api/v1/user/maik@mike.com', headers=headers)
+    id =  response.json['id']
+    data = {
+        "id": id
+    }
+
+    response = app.test_client().delete('/api/v1/user',json=data, headers=headers)
+    assert response.status_code == 200
+    assert response.json['msg'] == "1 row deleted"
+
+
+
 def test_get_email():
     token = get_token()
     headers = {
@@ -68,7 +135,6 @@ def test_get_email():
     response = app.test_client().get('/api/v1/user/mike@mike.com', headers=headers)
 
     assert response.json['email'] == "mike@mike.com"
-    assert response.json['id'] == 1
     assert response.json['name'] == "mike"
     assert response.json['rol'] == "Admin"
     assert response.status_code == 200
@@ -92,3 +158,20 @@ def test_get_token_status_dead():
     response = app.test_client().get('/api/v1/status', headers=headers)
     assert response.status_code == 401
     assert response.json['msg'] == 'Token has expired'
+
+
+def test_insert_user_guest():
+    token = get_token()
+    headers = {
+        'Authorization': 'Bearer {}'.format(token)
+    }
+    data = {
+        'name' : 'maikguest',
+        'email' : 'mike@guest.com',
+        'password':'facu1234',
+        'rol' : 'User',
+    }
+
+    response = app.test_client().post('/api/v1/user',json=data, headers=headers)
+    assert response.json['msg'] == "User inserted successfully"
+    assert response.status_code == 201
