@@ -37,10 +37,22 @@ def insertUser():
         hashedPassword = bcrypt.hashpw(
             password.encode('utf-8'), bcrypt.gensalt())
         cur = con.cursor()
-        cur.execute("INSERT INTO users (name, email, password, rol) VALUES (%s,%s,%s,%s)",
-                    (name, email, hashedPassword.decode('utf-8'), rol))
         cur.execute("SELECT * from users u WHERE u.email = %s", [email])
         user = cur.fetchone()
+        if user is not None:
+            cur.close()
+            return jsonify({"msg": "User with duplicated email"}), 400
+        cur.execute("INSERT INTO users (name, email, password, rol) VALUES (%s,%s,%s,%s)",
+                    (name, email, hashedPassword.decode('utf-8'), rol))
+        cur.execute("SELECT id, name, email, rol from users u WHERE u.email = %s", [email])
+        user = cur.fetchone()
+
+        user = {
+            "id": user[0],
+            "name": user[1],
+            "email": user[2],
+            "rol": user[3],
+        }
         con.commit()
         cur.close()
         return jsonify({"msg": "User inserted successfully", "user": user}), 201
@@ -128,10 +140,23 @@ def updateUser():
 
     try:
         cur = con.cursor()
-        cur.execute(
-            "UPDATE users SET name= %s, email= %s, rol= %s WHERE id = %s", (name, email, rol, id))
         cur.execute("SELECT * from users u WHERE u.email = %s", [email])
         user = cur.fetchone()
+        if user is not None:
+            cur.close()
+            return jsonify({"msg": "There is already another user with this email"}), 400
+        cur.execute(
+            "UPDATE users SET name= %s, email= %s, rol= %s WHERE id = %s", (name, email, rol, id))
+        cur.execute("SELECT id, name, email, rol from users u WHERE u.email = %s", [email])
+        user = cur.fetchone()
+        
+        user = {
+            "id": user[0],
+            "name": user[1],
+            "email": user[2],
+            "rol": user[3],
+        }
+
         con.commit()
         cur.close()
         return jsonify({"msg": "User updated successfully", "user": user}), 200
@@ -146,20 +171,15 @@ def deleteUser():
     rolActual = current_user["rol"]
     if rolActual != "Admin":
         return {"msg": 'Only admins can do that!'}, 401
-
     id = request.json.get("id", None)
-    
-
     if id is None:
         return jsonify({"msg": "All fields are required!"}), 400
     else:
         id = int(id)
-
     try:
         cur = con.cursor()
         cur.execute("DELETE FROM users u WHERE u.id=%s", [id])
         rowsDeleted = cur.rowcount
-        cur.execute("SELECT * from users u WHERE u.id = %s", [id])
         con.commit()
         cur.close()
         if (rowsDeleted != 1):
@@ -179,7 +199,7 @@ def refreshToken():
 
 
 @routes.route("/fullRefresh", methods=['POST'])
-@jwt_required(fresh=False)
+@jwt_required(refresh=True)
 def fullRefreshToken():
     password = request.json.get("password", None)
 
@@ -194,6 +214,9 @@ def fullRefreshToken():
     if not user:
         return {"msg": 'Please login!'}, 401
     if bcrypt.checkpw(password.encode('utf-8'), user[3].encode('utf-8')):
+        old_token = get_jwt()
+        jti = old_token["jti"]
+        blocklist.add(jti)
         identidad = {"email": user[2], "rol": user[4]}
         access_token = create_access_token(identity=identidad, fresh=True)
         refresh_token = create_refresh_token(identidad)

@@ -24,15 +24,29 @@ def insertPartner():
         return jsonify({"msg": "All fields are required!"}), 400
 
     try:
+        
         cur = con.cursor()
-        cur.execute("INSERT INTO partners (name, partnerId, document,authorized , contactNumber) VALUES (%s,%s,%s,%s,%s)",
+        cur.execute("SELECT * from partners p WHERE p.partnerId = %s", [partnerId])
+        partner = cur.fetchone()
+        if partner is not None:
+            cur.close()
+            return jsonify({"msg": "Duplicated partner Id"}), 400
+        cur.execute("INSERT INTO partners (name, partnerId, document, authorized, contactNumber) VALUES (%s,%s,%s,%s,%s)",
                     (name, partnerId, document, authorized, contactNumber))
         cur.execute(
-            "SELECT * from partners p WHERE p.partnerId = %s", [partnerId])
-        user = cur.fetchone()
+            "SELECT id, name, partnerId, document, authorized, contactNumber from partners p WHERE p.partnerId = %s", [partnerId])
+        partner = cur.fetchone()
+        partner = {
+            "id":partner[0],
+            "name":partner[1],
+            "partnerId":partner[2],
+            "document":partner[3],
+            "authorized":partner[4],
+            "contactNumber":partner[5]
+        }
         con.commit()
         cur.close()
-        return jsonify({"msg": "User inserted successfully", "user": user}), 201
+        return jsonify({"msg": "Partner inserted successfully", "partner": partner}), 201
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 
@@ -85,10 +99,18 @@ def updatePartner():
                     (name, document, contactNumber, partnerId))
         cur.execute(
             "SELECT * from partners p WHERE p.partnerId = %s", [partnerId])
-        user = cur.fetchone()
+        partner = cur.fetchone()
+        partner = {
+            "id":partner[0],
+            "name":partner[1],
+            "partnerId":partner[2],
+            "document":partner[3],
+            "authorized":partner[4],
+            "contactNumber":partner[5]
+        }
         con.commit()
         cur.close()
-        return jsonify({"msg": "User updated successfully", "user": user}), 200
+        return jsonify({"msg": "Partner updated successfully", "partner": partner}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 
@@ -105,8 +127,6 @@ def deletePartner():
         cur = con.cursor()
         cur.execute("DELETE FROM partners p WHERE p.partnerid=%s", [partnerId])
         rowsDeleted = cur.rowcount
-        cur.execute(
-            "SELECT * from partners p WHERE p.partnerId = %s", [partnerId])
         con.commit()
         cur.close()
         if (rowsDeleted != 1):
