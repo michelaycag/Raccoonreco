@@ -83,6 +83,7 @@ def updatePartner():
     partnerId = int(request.json.get("partnerId", None))
     document = request.json.get("document", None)
     contactNumber = request.json.get("contactNumber", None)
+    authorized= request.json.get("authorized", None)
 
     if name is None:
         return jsonify({"msg": "All fields are required!"}), 400
@@ -92,14 +93,17 @@ def updatePartner():
         return jsonify({"msg": "All fields are required!"}), 400
     if contactNumber is None:
         return jsonify({"msg": "All fields are required!"}), 400
+    if authorized is None:
+        return jsonify({"msg": "All fields are required!"}), 400
 
     try:
         cur = con.cursor()
-        cur.execute("UPDATE partners SET name= %s, document= %s, contactNumber= %s WHERE partnerId= %s",
-                    (name, document, contactNumber, partnerId))
+        cur.execute("UPDATE partners SET name= %s, document= %s, contactNumber= %s, authorized= %s WHERE partnerId= %s",
+                    (name, document, contactNumber, authorized, partnerId))
         cur.execute(
             "SELECT * from partners p WHERE p.partnerId = %s", [partnerId])
         partner = cur.fetchone()
+        print(partner)
         partner = {
             "id":partner[0],
             "name":partner[1],

@@ -142,9 +142,9 @@ def updateUser():
         cur = con.cursor()
         cur.execute("SELECT * from users u WHERE u.email = %s", [email])
         user = cur.fetchone()
-        if user is not None:
+        if user is None:
             cur.close()
-            return jsonify({"msg": "There is already another user with this email"}), 400
+            return jsonify({"msg": "User not found"}), 404
         cur.execute(
             "UPDATE users SET name= %s, email= %s, rol= %s WHERE id = %s", (name, email, rol, id))
         cur.execute("SELECT id, name, email, rol from users u WHERE u.email = %s", [email])
