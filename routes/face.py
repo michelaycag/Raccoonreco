@@ -24,9 +24,21 @@ def compareImage():
     imgRecovered = cv2.cvtColor(imgRecovered, cv2.COLOR_RGB2BGR)
     face_desc = get_face_embedding(imgRecovered)
     face_emb = vec2list(face_desc)
+    if len(face_emb) == 0:
+        return jsonify({"msg": "No face detected"}), 400
     retrieveResponse = retrieve(face_emb)
-    response = Response(stream_with_context(json.dumps(
-        retrieveResponse)), mimetype='application/json')
+    cur = con.cursor()
+    cur.execute("SELECT * from partners p WHERE p.id = %s", [retrieveResponse[0]])
+    partner = cur.fetchone()
+    data = {
+        "partnerId":retrieveResponse[0],
+        "id": retrieveResponse[1],
+        "name": retrieveResponse[2],
+        "proximity": retrieveResponse[3],
+        "authorized": partner[4],
+    }
+    cur.close()
+    response = Response(stream_with_context(json.dumps(data)), mimetype='application/json')
     return response
 
 

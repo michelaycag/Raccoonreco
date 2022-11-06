@@ -47,7 +47,7 @@ def get_face_embedding(img):
 def retrieve(emb):
     cur = con.cursor()
     query_string = """
-    select face_table.id as tabid, face_table.name as tabname,
+    select partnerId, face_table.id as tabid, face_table.name as tabname,
         euclidian ('{0}', face_table.face_embedding) as eucl from face_table
     order by eucl ASC
     limit 1
