@@ -178,14 +178,25 @@ def deleteUser():
         id = int(id)
     try:
         cur = con.cursor()
+        cur.execute("SELECT * from users u WHERE u.id = %s", [id])
+        user = cur.fetchone()
+        if user is None:
+            cur.close()
+            return jsonify({"msg": "User not found"}), 404
+        user = {
+            "id": user[0],
+            "name": user[1],
+            "email": user[2],
+            "rol": user[3],
+        }
         cur.execute("DELETE FROM users u WHERE u.id=%s", [id])
         rowsDeleted = cur.rowcount
         con.commit()
         cur.close()
         if (rowsDeleted != 1):
-            return jsonify({"msg": str(rowsDeleted) + " rows deleted"}), 200
+            return jsonify({"msg": str(rowsDeleted) + " rows deleted", "user": user}), 200
         else:
-            return jsonify({"msg": str(rowsDeleted) + " row deleted"}), 200
+            return jsonify({"msg": str(rowsDeleted) + " row deleted", "user": user}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 

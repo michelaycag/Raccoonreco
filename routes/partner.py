@@ -103,7 +103,6 @@ def updatePartner():
         cur.execute(
             "SELECT * from partners p WHERE p.partnerId = %s", [partnerId])
         partner = cur.fetchone()
-        print(partner)
         partner = {
             "id":partner[0],
             "name":partner[1],
@@ -129,13 +128,25 @@ def deletePartner():
 
     try:
         cur = con.cursor()
+        cur.execute("SELECT * from partners p WHERE p.partnerId = %s", [partnerId])
+        partner = cur.fetchone()
+        if partner is None:
+             return jsonify({"msg": "Partner not found", "error": e}), 404
+        partner = {
+            "id":partner[0],
+            "name":partner[1],
+            "partnerId":partner[2],
+            "document":partner[3],
+            "authorized":partner[4],
+            "contactNumber":partner[5]
+        }
         cur.execute("DELETE FROM partners p WHERE p.partnerid=%s", [partnerId])
         rowsDeleted = cur.rowcount
         con.commit()
         cur.close()
         if (rowsDeleted != 1):
-            return jsonify({"msg": str(rowsDeleted) + " rows deleted"}), 200
+            return jsonify({"msg": str(rowsDeleted) + " rows deleted", "partner": partner}), 200
         else:
-            return jsonify({"msg": str(rowsDeleted) + " row deleted"}), 200
+            return jsonify({"msg": str(rowsDeleted) + " row deleted",  "partner": partner}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
