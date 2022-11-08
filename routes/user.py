@@ -41,7 +41,7 @@ def insertUser():
         user = cur.fetchone()
         if user is not None:
             cur.close()
-            return jsonify({"msg": "User with duplicated email"}), 400
+            return jsonify({"msg": "User with duplicated email"}), 409
         cur.execute("INSERT INTO users (name, email, password, rol) VALUES (%s,%s,%s,%s)",
                     (name, email, hashedPassword.decode('utf-8'), rol))
         cur.execute("SELECT id, name, email, rol from users u WHERE u.email = %s", [email])

@@ -30,7 +30,7 @@ def insertPartner():
         partner = cur.fetchone()
         if partner is not None:
             cur.close()
-            return jsonify({"msg": "Duplicated partner Id"}), 400
+            return jsonify({"msg": "Duplicated partner Id"}), 409
         cur.execute("INSERT INTO partners (name, partnerId, document, authorized, contactNumber) VALUES (%s,%s,%s,%s,%s)",
                     (name, partnerId, document, authorized, contactNumber))
         cur.execute(
