@@ -97,20 +97,37 @@ def login():
 @jwt_required(fresh=False)
 def getAllUsers():
     try:
+        offset=  request.args.get("offset",None)
+        if offset is None:
+            cur = con.cursor()
+            cur.execute("SELECT id, name, email, rol FROM users")
+            users = cur.fetchall()
+            con.commit()
+            cur.close()
+            usuarios = []
+            if users is not None:
+                for u in users:
+                    data = {}
+                    data["id"] = u[0]
+                    data["name"] = u[1]
+                    data["email"] = u[2]
+                    data["rol"] = u[3]
+                    usuarios.append(data)
+            return jsonify({"data": usuarios}), 200
         cur = con.cursor()
-        cur.execute("SELECT id, name, email, rol FROM users")
+        cur.execute("SELECT id, name, email, rol FROM users LIMIT 5 OFFSET " + offset)
         users = cur.fetchall()
         con.commit()
         cur.close()
         usuarios = []
         if users is not None:
-            for u in users:
-                data = {}
-                data["id"] = u[0]
-                data["name"] = u[1]
-                data["email"] = u[2]
-                data["rol"] = u[3]
-                usuarios.append(data)
+                for u in users:
+                    data = {}
+                    data["id"] = u[0]
+                    data["name"] = u[1]
+                    data["email"] = u[2]
+                    data["rol"] = u[3]
+                    usuarios.append(data)
         return jsonify({"data": usuarios}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500

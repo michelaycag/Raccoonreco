@@ -55,8 +55,27 @@ def insertPartner():
 @jwt_required(fresh=False)
 def getAllPartners():
     try:
+        offset=  request.args.get("offset",None)
+        if offset is None:
+            cur = con.cursor()
+            cur.execute("SELECT * FROM partners")
+            users = cur.fetchall()
+            con.commit()
+            cur.close()
+            usuarios = []
+            if users is not None:
+                for u in users:
+                    data = {}
+                    data["id"] = u[0]
+                    data["name"] = u[1]
+                    data["partnerId"] = u[2]
+                    data["document"] = u[3]
+                    data["authorized"] = u[4]
+                    data["contactNumber"] = u[5]
+                    usuarios.append(data)
+            return jsonify({"data": usuarios}), 200
         cur = con.cursor()
-        cur.execute("SELECT * FROM partners")
+        cur.execute("SELECT * FROM partners LIMIT 5 OFFSET " + offset)
         users = cur.fetchall()
         con.commit()
         cur.close()
