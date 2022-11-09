@@ -59,6 +59,7 @@ def insertPartner():
 
 
 @routes.route("/partner/batch", methods=['POST'])
+@jwt_required(fresh=True)
 def insertPartnerBatch():
     f = request.files.get("partners", None)
     if f is None:
