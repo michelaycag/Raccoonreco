@@ -41,7 +41,7 @@ def insertUser():
         user = cur.fetchone()
         if user is not None:
             cur.close()
-            return jsonify({"msg": "User with duplicated email"}), 400
+            return jsonify({"msg": "User with duplicated email"}), 409
         cur.execute("INSERT INTO users (name, email, password, rol) VALUES (%s,%s,%s,%s)",
                     (name, email, hashedPassword.decode('utf-8'), rol))
         cur.execute("SELECT id, name, email, rol from users u WHERE u.email = %s", [email])
@@ -142,9 +142,9 @@ def updateUser():
         cur = con.cursor()
         cur.execute("SELECT * from users u WHERE u.email = %s", [email])
         user = cur.fetchone()
-        if user is not None:
+        if user is None:
             cur.close()
-            return jsonify({"msg": "There is already another user with this email"}), 400
+            return jsonify({"msg": "User not found"}), 404
         cur.execute(
             "UPDATE users SET name= %s, email= %s, rol= %s WHERE id = %s", (name, email, rol, id))
         cur.execute("SELECT id, name, email, rol from users u WHERE u.email = %s", [email])
@@ -178,14 +178,25 @@ def deleteUser():
         id = int(id)
     try:
         cur = con.cursor()
+        cur.execute("SELECT * from users u WHERE u.id = %s", [id])
+        user = cur.fetchone()
+        if user is None:
+            cur.close()
+            return jsonify({"msg": "User not found"}), 404
+        user = {
+            "id": user[0],
+            "name": user[1],
+            "email": user[2],
+            "rol": user[3],
+        }
         cur.execute("DELETE FROM users u WHERE u.id=%s", [id])
         rowsDeleted = cur.rowcount
         con.commit()
         cur.close()
         if (rowsDeleted != 1):
-            return jsonify({"msg": str(rowsDeleted) + " rows deleted"}), 200
+            return jsonify({"msg": str(rowsDeleted) + " rows deleted", "user": user}), 200
         else:
-            return jsonify({"msg": str(rowsDeleted) + " row deleted"}), 200
+            return jsonify({"msg": str(rowsDeleted) + " row deleted", "user": user}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 
