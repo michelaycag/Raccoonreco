@@ -83,3 +83,4 @@ wrapt==1.14.1
 flask-jwt-extended
 flask_bcrypt
 pytest
+requests

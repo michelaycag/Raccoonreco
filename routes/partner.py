@@ -1,9 +1,17 @@
 from pydoc import doc
-from flask import jsonify, request
+from flask import jsonify, request, make_response, request
 from FaceRecognitionFunctions import *
 from . import routes
 from flask_jwt_extended import jwt_required
+import csv
+import io
+import base64
+import requests
+from imageio import imread
+from FaceEmbeddings import update_table
 
+def transform(text_file_contents):
+    return text_file_contents.replace("=", ",")
 
 @routes.route("/partner", methods=['POST'])
 @jwt_required(fresh=True)
@@ -24,7 +32,6 @@ def insertPartner():
         return jsonify({"msg": "All fields are required!"}), 400
 
     try:
-        
         cur = con.cursor()
         cur.execute("SELECT * from partners p WHERE p.partnerId = %s", [partnerId])
         partner = cur.fetchone()
@@ -49,6 +56,66 @@ def insertPartner():
         return jsonify({"msg": "Partner inserted successfully", "partner": partner}), 201
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
+
+
+@routes.route("/partner/batch", methods=['POST'])
+def insertPartnerBatch():
+    f = request.files.get("partners", None)
+    if f is None:
+        return "No file"
+
+    stream = io.StringIO(f.stream.read().decode("UTF8"), newline=None)
+    csv_input = csv.reader(stream)
+    next(csv_input)
+    partners = []
+    for row in csv_input:
+        if len(row) == 5:
+            partner = {
+                "name":row[0].strip(),
+                "partnerId":row[1].strip(),
+                "document":row[2].strip(),
+                "contactNumber":row[3].strip(),
+                "authorized": True,
+                "picture": row[4].strip()
+            }
+            partners.append(partner)
+    insertedPartners = []
+    for partner in partners:
+        try:
+            cur = con.cursor()
+            cur.execute("SELECT * from partners p WHERE p.partnerId = %s", [partner['partnerId']])
+            fetchedPartner = cur.fetchone()
+            if fetchedPartner is not None:
+                cur.close()
+                return jsonify({"msg": "Duplicated partner Id"}), 409
+            cur.execute("INSERT INTO partners (name, partnerId, document, authorized, contactNumber) VALUES (%s,%s,%s,%s,%s)",
+                       ( partner['name'], partner['partnerId'], partner['document'], partner['authorized'], partner['contactNumber']))
+            cur.execute(
+                "SELECT id, name, partnerId, document, authorized, contactNumber from partners p WHERE p.partnerId = %s", [partner['partnerId']])
+            createdPartner = cur.fetchone()
+            createdPartner = {
+                "id":createdPartner[0],
+                "name":createdPartner[1],
+                "partnerId":createdPartner[2],
+                "document":createdPartner[3],
+                "authorized":createdPartner[4],
+                "contactNumber":createdPartner[5],
+            }
+            image = requests.get(partner["picture"]).content
+            base64PartnerImage = base64.b64encode(image)
+            imgRecovered = imread(io.BytesIO(base64.b64decode(base64PartnerImage)))
+            imgRecovered = cv2.cvtColor(imgRecovered, cv2.COLOR_RGB2BGR)
+            face_desc = get_face_embedding(imgRecovered)
+            face_emb = vec2list(face_desc)
+            if len(face_emb) == 0:
+                 return jsonify({"msg": "No face detected"}), 400
+            update_table(createdPartner['name'], face_emb, createdPartner['id'])
+            con.commit()
+            cur.close()
+            insertedPartners.append(createdPartner)
+        except psycopg2.DatabaseError as e:
+            return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
+    return jsonify({"msg": "Partners inserted successfully", "partner": insertedPartners}), 201
 
 
 @routes.route("/partners", methods=['GET'])
