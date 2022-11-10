@@ -84,3 +84,4 @@ flask-jwt-extended
 flask_bcrypt
 pytest
 requests
+validators

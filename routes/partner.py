@@ -9,6 +9,7 @@ import base64
 import requests
 from imageio import imread
 from FaceEmbeddings import update_table
+import validators
 
 def transform(text_file_contents):
     return text_file_contents.replace("=", ",")
@@ -62,8 +63,9 @@ def insertPartner():
 @jwt_required(fresh=True)
 def insertPartnerBatch():
     f = request.files.get("partners", None)
+    print('asd')
     if f is None:
-        return "No file"
+        return jsonify({"msg": "No file uploaded"}), 400
 
     stream = io.StringIO(f.stream.read().decode("UTF8"), newline=None)
     csv_input = csv.reader(stream)
@@ -84,6 +86,10 @@ def insertPartnerBatch():
     for partner in partners:
         try:
             cur = con.cursor()
+            if not partner['partnerId'].isnumeric():
+                return jsonify({"msg": "partnerId should be numeric"}), 400
+            if not validators.url(partner['picture']):
+                return jsonify({"msg": "Url is not valid"}), 400
             cur.execute("SELECT * from partners p WHERE p.partnerId = %s", [partner['partnerId']])
             fetchedPartner = cur.fetchone()
             if fetchedPartner is not None:
@@ -116,7 +122,10 @@ def insertPartnerBatch():
             insertedPartners.append(createdPartner)
         except psycopg2.DatabaseError as e:
             return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
-    return jsonify({"msg": "Partners inserted successfully", "partner": insertedPartners}), 201
+    if len(insertedPartners) > 0:       
+        return jsonify({"msg": "Partners inserted successfully", "partner": insertedPartners}), 201
+    else:
+        return jsonify({"msg": "No partners were inserted, please check the uploaded file"}), 400
 
 
 @routes.route("/partners", methods=['GET'])
@@ -124,9 +133,47 @@ def insertPartnerBatch():
 def getAllPartners():
     try:
         offset=  request.args.get("offset",None)
+        partnerId=  request.args.get("partnerId",None)
         if offset is None:
+            if partnerId is None:
+                cur = con.cursor()
+                cur.execute("SELECT * FROM partners ORDER BY id")
+                users = cur.fetchall()
+                con.commit()
+                cur.close()
+                usuarios = []
+                if users is not None:
+                    for u in users:
+                        data = {}
+                        data["id"] = u[0]
+                        data["name"] = u[1]
+                        data["partnerId"] = u[2]
+                        data["document"] = u[3]
+                        data["authorized"] = u[4]
+                        data["contactNumber"] = u[5]
+                        usuarios.append(data)
+                return jsonify({"data": usuarios}), 200
+            else:
+                cur = con.cursor()
+                cur.execute("SELECT * FROM partners WHERE partnerId::text LIKE '%"+ partnerId + "%' ORDER BY id")
+                users = cur.fetchall()
+                con.commit()
+                cur.close()
+                usuarios = []
+                if users is not None:
+                    for u in users:
+                        data = {}
+                        data["id"] = u[0]
+                        data["name"] = u[1]
+                        data["partnerId"] = u[2]
+                        data["document"] = u[3]
+                        data["authorized"] = u[4]
+                        data["contactNumber"] = u[5]
+                        usuarios.append(data)
+                return jsonify({"data": usuarios}), 200
+        if partnerId is None:
             cur = con.cursor()
-            cur.execute("SELECT * FROM partners")
+            cur.execute("SELECT * FROM partners ORDER BY id LIMIT 5 OFFSET " + offset)
             users = cur.fetchall()
             con.commit()
             cur.close()
@@ -142,23 +189,24 @@ def getAllPartners():
                     data["contactNumber"] = u[5]
                     usuarios.append(data)
             return jsonify({"data": usuarios}), 200
-        cur = con.cursor()
-        cur.execute("SELECT * FROM partners LIMIT 5 OFFSET " + offset)
-        users = cur.fetchall()
-        con.commit()
-        cur.close()
-        usuarios = []
-        if users is not None:
-            for u in users:
-                data = {}
-                data["id"] = u[0]
-                data["name"] = u[1]
-                data["partnerId"] = u[2]
-                data["document"] = u[3]
-                data["authorized"] = u[4]
-                data["contactNumber"] = u[5]
-                usuarios.append(data)
-        return jsonify({"data": usuarios}), 200
+        else:
+            cur = con.cursor()
+            cur.execute("SELECT * FROM partners WHERE partnerId::text LIKE '%"+ partnerId + "%' ORDER BY id LIMIT 5 OFFSET " + offset)
+            users = cur.fetchall()
+            con.commit()
+            cur.close()
+            usuarios = []
+            if users is not None:
+                for u in users:
+                    data = {}
+                    data["id"] = u[0]
+                    data["name"] = u[1]
+                    data["partnerId"] = u[2]
+                    data["document"] = u[3]
+                    data["authorized"] = u[4]
+                    data["contactNumber"] = u[5]
+                    usuarios.append(data)
+            return jsonify({"data": usuarios}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 
