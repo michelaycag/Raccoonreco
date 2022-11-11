@@ -97,24 +97,119 @@ def login():
 @jwt_required(fresh=False)
 def getAllUsers():
     try:
+        offset=  request.args.get("offset",None)
+        email=  request.args.get("email",None)
+        if offset is None:
+            if email is None:
+                cur = con.cursor()
+                cur.execute("SELECT id, name, email, rol FROM users ORDER BY id")
+                users = cur.fetchall()
+                con.commit()
+                cur.close()
+                usuarios = []
+                if users is not None:
+                    for u in users:
+                        data = {}
+                        data["id"] = u[0]
+                        data["name"] = u[1]
+                        data["email"] = u[2]
+                        data["rol"] = u[3]
+                        usuarios.append(data)
+                return jsonify({"data": usuarios}), 200
+            else:
+                cur = con.cursor()
+                cur.execute("SELECT id, name, email, rol FROM users WHERE email LIKE '%"+ email + "%' ORDER BY id")
+                users = cur.fetchall()
+                con.commit()
+                cur.close()
+                usuarios = []
+                if users is not None:
+                    for u in users:
+                        data = {}
+                        data["id"] = u[0]
+                        data["name"] = u[1]
+                        data["email"] = u[2]
+                        data["rol"] = u[3]
+                        usuarios.append(data)
+                return jsonify({"data": usuarios}), 200
+        if email is None:
+            cur = con.cursor()
+            cur.execute("SELECT id, name, email, rol FROM users ORDER BY id LIMIT 5 OFFSET " + offset)
+            users = cur.fetchall()
+            con.commit()
+            cur.close()
+            usuarios = []
+            if users is not None:
+                    for u in users:
+                        data = {}
+                        data["id"] = u[0]
+                        data["name"] = u[1]
+                        data["email"] = u[2]
+                        data["rol"] = u[3]
+                        usuarios.append(data)
+            return jsonify({"data": usuarios}), 200
         cur = con.cursor()
-        cur.execute("SELECT id, name, email, rol FROM users")
+        cur.execute("SELECT id, name, email, rol FROM users WHERE email LIKE '%"+ email + "%' ORDER BY id LIMIT 5 OFFSET " + offset)
         users = cur.fetchall()
         con.commit()
         cur.close()
         usuarios = []
         if users is not None:
-            for u in users:
-                data = {}
-                data["id"] = u[0]
-                data["name"] = u[1]
-                data["email"] = u[2]
-                data["rol"] = u[3]
-                usuarios.append(data)
+                for u in users:
+                    data = {}
+                    data["id"] = u[0]
+                    data["name"] = u[1]
+                    data["email"] = u[2]
+                    data["rol"] = u[3]
+                    usuarios.append(data)
         return jsonify({"data": usuarios}), 200
     except psycopg2.DatabaseError as e:
         return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 
+@routes.route("/user/password", methods=['PATCH'])
+@jwt_required(fresh=True)
+def updateUserPassword():
+    current_user = get_jwt_identity()
+
+    userEmail = current_user['email']
+    oldPassword = request.json.get("oldPassword", None)
+    newPassword = request.json.get("newPassword", None)
+
+    if oldPassword is None:
+        return jsonify({"msg": "All fields are required!"}), 400
+    if newPassword is None:
+        return jsonify({"msg": "All fields are required!"}), 400
+
+    oldPassword = str(oldPassword)
+    newPassword = str(newPassword)
+    userEmail = str(userEmail)
+    try:
+        cur = con.cursor()
+        cur.execute("SELECT * from users u WHERE u.email = %s", [userEmail])
+        user = cur.fetchone()
+        if not user:
+            cur.close()
+            return {"msg": 'User not found!'}, 401
+        if bcrypt.checkpw(oldPassword.encode('utf-8'), user[3].encode('utf-8')):
+            hashedPassword = bcrypt.hashpw(
+            newPassword.encode('utf-8'), bcrypt.gensalt())
+            cur.execute(
+            "UPDATE users SET password= %s WHERE email= %s", [hashedPassword.decode('utf-8'), userEmail])
+            cur.execute("SELECT id, name, email, rol from users u WHERE u.email = %s", [userEmail])
+            user = cur.fetchone()
+            user = {
+                "id": user[0],
+                "name": user[1],
+                "email": user[2],
+                "rol": user[3],
+            }
+            con.commit()
+            cur.close()
+            return jsonify({"msg": "User updated successfully", "user": user}), 200
+        cur.close()
+        return {"msg": 'Password is wrong!'}, 409
+    except psycopg2.DatabaseError as e:
+        return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
 
 @routes.route("/user", methods=['PATCH'])
 @jwt_required(fresh=True)

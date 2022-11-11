@@ -30,7 +30,7 @@ def update_table( name, face_emb, partnerId):
         cur.execute("INSERT INTO face_table (name,face_embedding, partnerId) VALUES (%s,%s,%s)", (name, face_emb, partnerId))
         con.commit()
         cur.close()
-    except psycopg2 as e :
+    except BaseException as e :
         print('Error! face_table', e)
     
 
