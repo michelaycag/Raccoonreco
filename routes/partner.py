@@ -128,6 +128,37 @@ def insertPartnerBatch():
         return jsonify({"msg": "No partners were inserted, please check the uploaded file"}), 400
 
 
+@routes.route("/partner", methods=['GET'])
+@jwt_required(fresh=False)
+def getPartnerById():
+    try:
+        partnerId=  request.json.get("partnerId",None)
+        if partnerId is not None:
+            cur = con.cursor()
+            cur.execute("SELECT * FROM partners where partnerId = %s", [partnerId])
+            users = cur.fetchone()
+            con.commit()
+            cur.close()
+            if users is not None:
+                users = {
+                "id": users[0],
+                "name": users[1],
+                "partnerId": users[2],
+                "document": users[3],
+                "authorized": users[4],
+                "contactNumber": users[5],
+                
+                }
+                return jsonify({"data": users}), 200
+            else :
+                return  jsonify({"msg": "No partners found"}), 400
+        else :
+            return  jsonify({"msg": "All fields are required!"}), 400
+    except psycopg2.DatabaseError as e:
+            return jsonify({"msg": "Something went wrong! Please try again later", "error": e}), 500
+
+
+                
 @routes.route("/partners", methods=['GET'])
 @jwt_required(fresh=False)
 def getAllPartners():

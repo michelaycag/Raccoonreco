@@ -25,8 +25,28 @@ def test_login():
     assert len(token) > 0
     assert response.status_code == 200
 
+def test_login_invalid():
+
+    data = {
+        'email' : 'mike@mike.com',
+        'password':'facu12345665'
+    }
+    response = app.test_client().post('/api/v1/login', json=data)
+    assert response.json['msg'] == "Email or password are wrong!"   
+    assert response.status_code == 401   
+
+def test_login_no_password():
+
+    data = {
+        'email' : 'mike@mike.com'
+    }
+    response = app.test_client().post('/api/v1/login', json=data)
+    assert response.json['msg'] == "All fields are required!"   
+    assert response.status_code == 400
+
 def test_get_all_users_unauthorized():
     response = app.test_client().get('/api/v1/users')
+    
 
     assert response.status_code == 401
 
@@ -70,6 +90,21 @@ def test_insert_user():
     response = app.test_client().post('/api/v1/user',json=data, headers=headers)
     assert response.json['msg'] == "User inserted successfully"
     assert response.status_code == 201
+
+def test_insert_user_expired():
+    headers = {
+        'Authorization': 'Bearer {}'.format('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY2NjY1Mjg2MSwianRpIjoiYjMyMDc2OGEtODAxMS00MDY5LWI5ZjgtNDg0YWEyM2U1OWVkIiwidHlwZSI6InJlZnJlc2giLCJzdWIiOnsiZW1haWwiOiJtaWtlQG1pa2UuY29tIiwicm9sIjoiQWRtaW4ifSwibmJmIjoxNjY2NjUyODYxLCJjc3JmIjoiYjIxMmFlNDgtZTY1MC00YTE1LTgyZmMtMjQ0ODE1ZmZlMmJkIiwiZXhwIjoxNjY2NjUyOTEwfQ.hDLWVFMLN_SmoZ47PGp0pqlgXsgyxPESijIa7kOXXu8')
+    }
+    data = {
+        'name' : 'maik',
+        'email' : 'maik@mike.com',
+        'password':'facu1234',
+        'rol' : 'Admin',
+    }
+
+    response = app.test_client().post('/api/v1/user',json=data, headers=headers)
+    assert response.json['msg'] == "Token has expired"
+    assert response.status_code == 401
 
 def test_edit_user():
     token = get_token()
