@@ -235,7 +235,7 @@ def updateUser():
 
     try:
         cur = con.cursor()
-        cur.execute("SELECT * from users u WHERE u.email = %s", [email])
+        cur.execute("SELECT * from users u WHERE u.id = %s", [id])
         user = cur.fetchone()
         if user is None:
             cur.close()
