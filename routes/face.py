@@ -30,16 +30,23 @@ def compareImage():
     cur = con.cursor()
     cur.execute("SELECT * from partners p WHERE p.id = %s", [retrieveResponse[0]])
     partner = cur.fetchone()
-    data = {
-        "partnerId":retrieveResponse[0],
-        "id": retrieveResponse[1],
-        "name": retrieveResponse[2],
-        "proximity": retrieveResponse[3],
-        "authorized": partner[4],
-    }
-    cur.close()
-    response = Response(stream_with_context(json.dumps(data)), mimetype='application/json')
-    return response
+    if partner:
+        data = {
+            "partnerId":retrieveResponse[0],
+            "id": retrieveResponse[1],
+            "name": retrieveResponse[2],
+            "proximity": retrieveResponse[3],
+            "authorized": partner[4],
+            "fkId": partner[2],
+        }
+        
+        cur.close()
+        response = Response(stream_with_context(json.dumps(data)), mimetype='application/json')
+        return response
+    else:
+        cur.close()
+        return jsonify({"msg": "Not recognized"}), 400
+
 
 
 @routes.route('/face', methods=['POST'])
